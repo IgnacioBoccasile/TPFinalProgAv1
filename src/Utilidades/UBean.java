@@ -7,75 +7,87 @@ import java.util.ArrayList;
 
 public class UBean
 {
-    public static ArrayList<Field> obtenerAtributos(Object o)
-    {
-        ArrayList<Field> misAtributos = new ArrayList<Field>();
+	public static ArrayList<Field> obtenerAtributos(Object o)
+	{
+		ArrayList<Field> retorno = new ArrayList<Field>();
 
-        Field[] atributos = o.getClass().getDeclaredFields();
+		Class c = o.getClass();
 
-        for (Field a : atributos)
-        {
-            misAtributos.add(a);
-        }
-        
-        return misAtributos;
-    }
+		for(Field f: c.getDeclaredFields())
+		{
+			retorno.add(f);
+		}
 
-    public static Object ejecutarSet(Object o, String att, Object valor)
-    {
-        Method[] misMethods = o.getClass().getDeclaredMethods();
-        
-        String atributo = att.substring(0, 1).toUpperCase() + att.substring(1);
+		return retorno;
+	}
 
-        try
-        {
-            for (Method m: misMethods)
-            {
-                if(m.getName().startsWith("set" + atributo))
-                {
-                    m.invoke(o, valor);
-                }
-            }
-        }
-        catch (InvocationTargetException e)
-        {
-            e.printStackTrace();
-        }
-        catch (IllegalAccessException e)
-        {
-            e.printStackTrace();
-        }
-        
-        return o;
-    }
+	public static void ejecutarSet(Object o, String att, Object valor)
+	{
+		if(o != null && valor != null)
+		{
+			Class c = o.getClass();
 
-    public static Object ejecutarGet(Object o, String att)
-    {
-        Object valor = new Object();
-        
-        Method[] misMethods = o.getClass().getDeclaredMethods();
-        
-        String atributo = att.substring(0, 1).toUpperCase() + att.substring(1);
+			String atributo = att.substring(0, 1).toUpperCase() + att.substring(1);
 
-        try
-        {
-            for (Method m: misMethods)
-            {
-                if(m.getName().startsWith("get" + atributo))
-                {
-                    valor = m.invoke(o);
-                }
-            }
-        }
-        catch (IllegalAccessException e)
-        {
-            e.printStackTrace();
-        }
-        catch (InvocationTargetException e)
-        {
-            e.printStackTrace();
-        }
-        
-        return valor;
-    }
+			for(Method m : c.getDeclaredMethods())
+			{
+				if(m.getName().startsWith("set".concat(atributo)))
+				{
+					try
+					{
+						m.invoke(o, valor);
+					}
+					catch (IllegalAccessException e)
+					{
+						e.printStackTrace();
+					}
+					catch (IllegalArgumentException e)
+					{
+						e.printStackTrace();
+					}
+					catch (InvocationTargetException e)
+					{
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+
+	public static Object ejecutarGet(Object o, String att)
+	{
+		Object retorno = null;
+
+		if(o != null)
+		{
+			Class c = o.getClass();
+
+			String atributo = att.substring(0, 1).toUpperCase() + att.substring(1);
+
+			for(Method m : c.getDeclaredMethods())
+			{
+				if(m.getName().startsWith("get".concat(atributo)))
+				{
+					try
+					{
+						retorno = m.invoke(o);
+					}
+					catch (IllegalAccessException e)
+					{
+						e.printStackTrace();
+					}
+					catch (IllegalArgumentException e)
+					{
+						e.printStackTrace();
+					}
+					catch (InvocationTargetException e)
+					{
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+
+		return retorno;
+	}
 }
