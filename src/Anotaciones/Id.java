@@ -7,6 +7,8 @@ import java.lang.annotation.ElementType;
 
 @Retention(RetentionPolicy.RUNTIME)
 
+//Anotación declarada a nivel de atributo:
+
 @Target(ElementType.FIELD)
 
 public @interface Id

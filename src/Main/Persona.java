@@ -55,15 +55,15 @@ public class Persona
 	}
 
 	@Override
-	public boolean equals(Object obj)
+	public boolean equals(Object o)
 	{
 		boolean retorno = false;
 
-		if(obj != null)
+		if(o != null)
 		{
-			if(obj.getClass().equals(this.getClass()))
+			if(o.getClass().equals(this.getClass()))
 			{
-				Persona p = (Persona) obj;
+				Persona p = (Persona) o;
 
 				if(p.id == this.id)
 				{
@@ -84,19 +84,19 @@ public class Persona
 
 		return retorno;
 	}
-	
+
 	public String toStringGuardar()
 	{
 		return "\nFELICITACIONES!!! " + this.nombre + " " + this.apellido + " fue cargado correctamente en la base datos :)";
 	}
-	
+
 	public String toStringConsultar()
 	{
-		return "\nLa persona con el Id N° " + this.id + " posee los siguientes datos:\n\nNombre = " + this.nombre + ", " + "Apellido = " + this.apellido;
+		return "\nLa persona con el ID N° " + this.id + " posee los siguientes datos:\n\nNombre = " + this.nombre + ", " + "Apellido = " + this.apellido;
 	}
-	
+
 	public String toStringObtenerTodos()
 	{
-		return "Id = " + this.id + ", Nombre = " + this.nombre + ", " + "Apellido = " + this.apellido;
+		return "ID = " + this.id + ", Nombre = " + this.nombre + ", " + "Apellido = " + this.apellido;
 	}
 }

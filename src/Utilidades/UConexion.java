@@ -3,15 +3,24 @@ package Utilidades;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+
 import java.util.ResourceBundle;
+
+/*
+
+La clase 'UConexion' tiene implementada el patrón de diseño 'Singleton'. Es la encargada de armar la conexión a base de 
+datos. El Driver, la ubicación de la base de datos, el usuario y la contraseña se obtienen por medio del archivo llamado
+'framework.properties', el cual puede modificarse externamente:
+
+*/
 
 public class UConexion
 {
 	private static UConexion instance;
 
-	private Connection conexion;
+	private Connection miConexion;
 
-	public static UConexion instancia()
+	public static UConexion getInstancia()
 	{
 		if(instance == null)
 		{
@@ -25,20 +34,20 @@ public class UConexion
 		}
 	}
 
-	public Connection getConexion()
+	public Connection getConnection()
 	{
-		return this.conexion;
+		return this.miConexion;
 	}
 
 	public void conectar()
 	{
 		try
 		{
-			ResourceBundle rs = ResourceBundle.getBundle("framework");
+			ResourceBundle miResourceBundle = ResourceBundle.getBundle("framework");
 
-			Class.forName(rs.getString("Driver"));
+			Class.forName(miResourceBundle.getString("Driver"));
 
-			this.conexion = DriverManager.getConnection(rs.getString("Ubicación"), rs.getString("Usuario"),rs.getString("Contraseña"));
+			this.miConexion = DriverManager.getConnection(miResourceBundle.getString("Ubicación"), miResourceBundle.getString("Usuario"), miResourceBundle.getString("Contraseña"));
 		}
 		catch(ClassNotFoundException e)
 		{
@@ -54,7 +63,7 @@ public class UConexion
 	{
 		try
 		{
-			this.conexion.close();
+			this.miConexion.close();
 		}
 		catch (SQLException e)
 		{

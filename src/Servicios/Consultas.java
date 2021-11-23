@@ -3,35 +3,42 @@ package Servicios;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 import Anotaciones.Columna;
 import Anotaciones.Tabla;
 import Anotaciones.Id;
+
 import Utilidades.UBean;
 import Utilidades.UConexion;
 
 public class Consultas
 {
+
+/*
+
+El método 'guardar' guarda en la base de datos el objeto. La query se arma por medio de reflexión, utilizando tanto las 
+annotations del package 'Anotaciones', como los métodos de 'UBean' en el package 'Utilidades'. También se modificó para que,
+además de guardar, retorne el objeto con el atributo "ID" generado por la base de datos:
+
+*/
+
 	public static Object guardar(Object o, Object idConsultar)
 	{
-		String consulta = "INSERT INTO ";
+		String query = "INSERT INTO ";
 
-		int i  = 0;
+		Class miClase = o.getClass();
 
-		Class c = o.getClass();
+		Tabla tabla = (Tabla) miClase.getAnnotation(Tabla.class);
 
-		Tabla t = (Tabla) c.getAnnotation(Tabla.class);
-
-		String nombreTabla = t.nombre();
+		String nombreTabla = tabla.nombre();
 
 		List<Field> atributos = UBean.obtenerAtributos(o);
 
@@ -39,23 +46,23 @@ public class Consultas
 
 		String valores = ") VALUES (";
 
-		int k = 1;
+		UConexion miUConexion = UConexion.getInstancia();
 
-		UConexion cone = UConexion.instancia();
+		miUConexion.conectar();
 
-		cone.conectar();
+		Connection miConnection = miUConexion.getConnection();
 
-		Connection con = cone.getConexion();
+		query = query + nombreTabla;
 
-		consulta = consulta + nombreTabla;
+		int i  = 0;
 
-		for(Field f: atributos)
+		for(Field f : atributos)
 		{
-			Columna col = f.getAnnotation(Columna.class);
+			Columna miColumna = f.getAnnotation(Columna.class);
 
-			if(col != null)
+			if(miColumna != null)
 			{
-				columnas = columnas + col.nombre() + ",";
+				columnas = columnas + miColumna.nombre() + ",";
 
 				i++;
 			}
@@ -63,28 +70,30 @@ public class Consultas
 
 		columnas = columnas.substring(0, columnas.length() - 1);
 
-		for(int j = 0; j<i; j++)
+		for(int j = 0; j < i; j++)
 		{
 			valores = valores + "?,";
 		}
 
 		valores = valores.substring(0, valores.length() - 1);
 
-		consulta = consulta + columnas + valores + ")";
+		query = query + columnas + valores + ")";
 
-		PreparedStatement ps;
+		PreparedStatement miPreparedStatement;
+
+		int k = 1;
 
 		try
 		{
-			ps = con.prepareStatement(consulta);
+			miPreparedStatement = miConnection.prepareStatement(query);
 
-			for(Field f: atributos)
+			for(Field f : atributos)
 			{
 				try
 				{
 					if(f.getAnnotation(Columna.class) != null)
 					{
-						ps.setObject(k, UBean.ejecutarGet(o, f.getName()));
+						miPreparedStatement.setObject(k, UBean.ejecutarGet(o, f.getName()));
 
 						k++;
 					}
@@ -95,29 +104,35 @@ public class Consultas
 				}
 			}
 
-			ps.execute();
+			miPreparedStatement.execute();
 		}
-		catch (SQLException e1)
+		catch (SQLException e)
 		{
-			e1.printStackTrace();
+			e.printStackTrace();
 		}
 
-		cone.desconectar();
-		
-		return obtenerPorId(c, idConsultar);
+		miUConexion.desconectar();
+
+		return obtenerPorId(miClase, idConsultar);
 	}
+
+/*
+
+El método 'modificar' modifica todas las columnas, excepto 'ID', la cual se utiliza para la restricción 'WHERE'. La query se
+arma por medio de reflexión, utilizando tanto las annotations del package 'Anotaciones', como los métodos de 'UBean' en el
+package 'Utilidades':
+
+*/
 
 	public static void modificar(Object o)
 	{
-		String consulta = "UPDATE ";
+		String query = "UPDATE ";
 
-		int i  = 0;
+		Class miClase = o.getClass();
 
-		Class c = o.getClass();
+		Tabla tabla = (Tabla) miClase.getAnnotation(Tabla.class);
 
-		Tabla t = (Tabla) c.getAnnotation(Tabla.class);
-
-		String nombreTabla = t.nombre();
+		String nombreTabla = tabla.nombre();
 
 		List<Field> atributos = UBean.obtenerAtributos(o);
 
@@ -125,15 +140,17 @@ public class Consultas
 
 		String columnaId = "WHERE ";
 
-		UConexion cone = UConexion.instancia();
+		UConexion miUConexion = UConexion.getInstancia();
 
-		cone.conectar();
+		miUConexion.conectar();
 
-		Connection con = cone.getConexion();
+		Connection miConnection = miUConexion.getConnection();
 
-		consulta = consulta + nombreTabla + " SET";
+		query = query + nombreTabla + " SET";
 
-		for(Field f: atributos)
+		int i  = 0;
+
+		for(Field f : atributos)
 		{
 			Id id = f.getAnnotation(Id.class);
 
@@ -142,11 +159,11 @@ public class Consultas
 				columnaId = columnaId + "id = " + UBean.ejecutarGet(o, f.getName());
 			}
 
-			Columna col = f.getAnnotation(Columna.class);
+			Columna miColumna = f.getAnnotation(Columna.class);
 
-			if(col != null)
+			if(miColumna != null)
 			{
-				columnas = columnas + col.nombre() + " = '" + UBean.ejecutarGet(o, f.getName()) + "' ,";
+				columnas = columnas + miColumna.nombre() + " = '" + UBean.ejecutarGet(o, f.getName()) + "' ,";
 
 				i++;
 			}
@@ -154,19 +171,19 @@ public class Consultas
 
 		columnas = columnas.substring(0, columnas.length() - 1);
 
-		consulta = consulta + columnas + columnaId;
+		query = query + columnas + columnaId;
 
 		try
 		{
-			PreparedStatement st = con.prepareCall(consulta);
+			PreparedStatement miPreparedStatement = miConnection.prepareCall(query);
 
-			if(st.executeUpdate() != 0)
+			if(miPreparedStatement.executeUpdate() != 0)
 			{
-				System.out.println("\nFELICITACIONES!!! La persona fue modificada exitosamente, ya puede verificarlo en la base de datos :)");
+				System.out.println("\nFELICITACIONES!!! La Persona fue modificada exitosamente, ya puede verificarlo en la base de datos :)");
 			}
 			else
 			{
-				System.out.println("\nLo sentimos, no existe una persona con ese Id en la base de datos :(");
+				System.out.println("\nLo sentimos, no existe una Persona con ese ID en la base de datos :(");
 			}
 		}
 		catch (SQLException e)
@@ -174,32 +191,39 @@ public class Consultas
 			e.printStackTrace();
 		}
 
-		cone.desconectar();
+		miUConexion.desconectar();
 	}
+
+/*
+
+El método 'eliminar' elimina el registro de la base de datos. La query se arma por medio de reflexión, utilizando tanto las 
+annotations del package 'Anotaciones', como los métodos de 'UBean' en el package 'Utilidades':
+
+*/
 
 	public static void eliminar(Object o)
 	{
-		String consulta = "DELETE FROM ";
+		String query = "DELETE FROM ";
 
-		Class c = o.getClass();
+		Class miClase = o.getClass();
 
-		Tabla t = (Tabla) c.getAnnotation(Tabla.class);
+		Tabla tabla = (Tabla) miClase.getAnnotation(Tabla.class);
 
-		String nombreTabla = t.nombre();
+		String nombreTabla = tabla.nombre();
 
 		List<Field> atributos = UBean.obtenerAtributos(o);
 
 		String columnaId = "";
 
-		consulta = consulta + nombreTabla + " WHERE ";
+		query = query + nombreTabla + " WHERE ";
 
-		UConexion cone = UConexion.instancia();
+		UConexion miUConexion = UConexion.getInstancia();
 
-		cone.conectar();
+		miUConexion.conectar();
 
-		Connection con = cone.getConexion();
-		
-		for(Field f: atributos)
+		Connection miConnection = miUConexion.getConnection();
+
+		for(Field f : atributos)
 		{
 			Id id = f.getAnnotation(Id.class);
 
@@ -209,19 +233,19 @@ public class Consultas
 			}
 		}
 
-		consulta = consulta + columnaId;
+		query = query + columnaId;
 
 		try
 		{
-			PreparedStatement st = con.prepareCall(consulta);
-			
-			if(st.executeUpdate() != 0)
+			PreparedStatement miPreparedStatement = miConnection.prepareCall(query);
+
+			if(miPreparedStatement.executeUpdate() != 0)
 			{
-				System.out.println("\nFELICITACIONES!!! La persona fue dada de baja exitosamente, ya puede verificarlo en la base de datos :)");
+				System.out.println("\nFELICITACIONES!!! La Persona fue dada de baja exitosamente, ya puede verificarlo en la base de datos :)");
 			}
 			else
 			{
-				System.out.println("\nLo sentimos, no existe una persona con ese Id en la base de datos :(");
+				System.out.println("\nLo sentimos, no existe una Persona con ese ID en la base de datos :(");
 			}
 		}
 		catch (SQLException e)
@@ -229,26 +253,34 @@ public class Consultas
 			e.printStackTrace();
 		}
 
-		cone.desconectar();
+		miUConexion.desconectar();
 	}
 
-	public static Object obtenerPorId(Class c,Object id)
+/*
+
+El método 'obtenerPorId' devuelve un objeto del tipo definido en el parámetro 'Class', con todos sus datos cargados. La
+query se arma por medio de reflexión, utilizando tanto las annotations del package 'Anotaciones', como los métodos de 
+'UBean' en el package 'Utilidades':
+
+*/
+
+	public static Object obtenerPorId(Class c, Object id)
 	{
-		String consulta = "SELECT * FROM ";
+		String query = "SELECT * FROM ";
 
-		Tabla t = (Tabla) c.getAnnotation(Tabla.class);
+		Tabla tabla = (Tabla) c.getAnnotation(Tabla.class);
 
-		String nombreTabla = t.nombre();
+		String nombreTabla = tabla.nombre();
 
 		Object retorno = null;
 
-		for(Constructor constru: c.getDeclaredConstructors())
+		for(Constructor miConstructor : c.getDeclaredConstructors())
 		{
-			if(constru.getParameterCount() == 0)
+			if(miConstructor.getParameterCount() == 0)
 			{
 				try
 				{
-					retorno = constru.newInstance();
+					retorno = miConstructor.newInstance();
 				}
 				catch (InstantiationException e)
 				{
@@ -271,25 +303,25 @@ public class Consultas
 
 		List<Field> atributos = UBean.obtenerAtributos(retorno);
 
-		consulta = consulta + nombreTabla + " WHERE id = " + id;
+		query = query + nombreTabla + " WHERE id = " + id;
 
-		UConexion cone = UConexion.instancia();
+		UConexion miUConexion = UConexion.getInstancia();
 
-		cone.conectar();
+		miUConexion.conectar();
 
-		Connection con = cone.getConexion();
+		Connection miConnection = miUConexion.getConnection();
 
 		try
 		{
-			PreparedStatement select = con.prepareCall(consulta);
+			PreparedStatement miPreparedStatement = miConnection.prepareCall(query);
 
-			ResultSet rs =  select.executeQuery();
+			ResultSet miResultSet =  miPreparedStatement.executeQuery();
 
-			while(rs.next())
+			while(miResultSet.next())
 			{
-				for(Field f: atributos)
+				for(Field f : atributos)
 				{
-					UBean.ejecutarSet(retorno, f.getName(), rs.getObject(f.getName()));
+					UBean.ejecutarSet(retorno, f.getName(), miResultSet.getObject(f.getName()));
 				}
 			}
 		}
@@ -298,22 +330,27 @@ public class Consultas
 			e.printStackTrace();
 		}
 
-		cone.desconectar();
+		miUConexion.desconectar();
 
 		return retorno;
 	}
-	
+
+/*
+
+El método 'guardarModificar' guarda el objeto si es que el mismo no existe en la base de datos. Pero lo modifica en caso
+de que ya se encuentre persistido:
+
+*/
+
 	public static void guardarModificar(Object o, Object idGuardarModificar)
 	{
-		String consulta = "UPDATE ";
+		String query = "UPDATE ";
 
-		int i  = 0;
+		Class miClase = o.getClass();
 
-		Class c = o.getClass();
+		Tabla tabla = (Tabla) miClase.getAnnotation(Tabla.class);
 
-		Tabla t = (Tabla) c.getAnnotation(Tabla.class);
-
-		String nombreTabla = t.nombre();
+		String nombreTabla = tabla.nombre();
 
 		List<Field> atributos = UBean.obtenerAtributos(o);
 
@@ -321,15 +358,17 @@ public class Consultas
 
 		String columnaId = "WHERE ";
 
-		UConexion cone = UConexion.instancia();
+		UConexion miUConexion = UConexion.getInstancia();
 
-		cone.conectar();
+		miUConexion.conectar();
 
-		Connection con = cone.getConexion();
+		Connection miConnection = miUConexion.getConnection();
 
-		consulta = consulta + nombreTabla + " SET";
+		query = query + nombreTabla + " SET";
 
-		for(Field f: atributos)
+		int i  = 0;
+
+		for(Field f : atributos)
 		{
 			Id id = f.getAnnotation(Id.class);
 
@@ -338,11 +377,11 @@ public class Consultas
 				columnaId = columnaId + "id = " + UBean.ejecutarGet(o, f.getName());
 			}
 
-			Columna col = f.getAnnotation(Columna.class);
+			Columna miColumna = f.getAnnotation(Columna.class);
 
-			if(col != null)
+			if(miColumna != null)
 			{
-				columnas = columnas + col.nombre() + " = '" + UBean.ejecutarGet(o, f.getName()) + "' ,";
+				columnas = columnas + miColumna.nombre() + " = '" + UBean.ejecutarGet(o, f.getName()) + "' ,";
 
 				i++;
 			}
@@ -350,19 +389,20 @@ public class Consultas
 
 		columnas = columnas.substring(0, columnas.length() - 1);
 
-		consulta = consulta + columnas + columnaId;
+		query = query + columnas + columnaId;
 
 		try
 		{
-			PreparedStatement st = con.prepareCall(consulta);
+			PreparedStatement miPreparedStatement = miConnection.prepareCall(query);
 
-			if(st.executeUpdate() != 0)
+			if(miPreparedStatement.executeUpdate() != 0)
 			{
-				System.out.println("\nFELICITACIONES!!! La persona fue modificada exitosamente, ya puede verificarlo en la base de datos :)");
+				System.out.println("\nFELICITACIONES!!! La Persona fue modificada exitosamente, ya puede verificarlo en la base de datos :)");
 			}
 			else
 			{
-				System.out.println("\nLa persona indicada no existía en la base de datos, así que la agregamos. Ya puede verificarlo :)");
+				System.out.println("\nLa Persona indicada no existía en la base de datos, así que la agregamos. Ya puede verificarlo :)");
+
 				guardar(o, idGuardarModificar);
 			}
 		}
@@ -371,53 +411,71 @@ public class Consultas
 			e.printStackTrace();
 		}
 
-		cone.desconectar();
+		miUConexion.desconectar();
 	}
-	
-	public static ArrayList<Object> obtenerTodos(Class c) {
-		String consulta = "SELECT * FROM ";
+
+/*
+
+El método 'obtenerTodos' obtiene todos los registros de la base de datos.
+
+*/
+
+	public static ArrayList<Object> obtenerTodos(Class c)
+	{
+		String query = "SELECT * FROM ";
+
 		String nombreTabla = ((Tabla)c.getAnnotation(Tabla.class)).nombre();
-		
-		consulta = consulta + nombreTabla;
-		
-		ArrayList<Object> retorno = new ArrayList<Object>();		
-		
-		try {
-			UConexion cone = UConexion.instancia();
 
-			cone.conectar();
+		query = query + nombreTabla;
 
-			Connection con = cone.getConexion();
-			PreparedStatement ps = con.prepareStatement(consulta);
-		
-			ResultSet res = ps.executeQuery();
-			
-			while(res.next()) {
-				Object myObj = null;
-				for(Constructor cons:c.getConstructors()) {
-					if(cons.getParameterCount() == 0) {
-						myObj = cons.newInstance(null);
+		ArrayList<Object> personas = new ArrayList<Object>();	
+
+		try
+		{
+			UConexion miUConexion = UConexion.getInstancia();
+
+			miUConexion.conectar();
+
+			Connection miConnection = miUConexion.getConnection();
+
+			PreparedStatement miPreparedStatement = miConnection.prepareStatement(query);
+
+			ResultSet miResultSet = miPreparedStatement.executeQuery();
+
+			while(miResultSet.next())
+			{
+				Object miObjeto = null;
+
+				for(Constructor miConstructor : c.getConstructors())
+				{
+					if(miConstructor.getParameterCount() == 0)
+					{
+						miObjeto = miConstructor.newInstance(null);
+
 						break;
 					}
 				}
-				
-				ArrayList<Field> fields = UBean.obtenerAtributos(myObj);
-				
-				for (int i = 0; i < fields.size(); i++) {
-					  Columna columna = fields.get(i).getAnnotation(Columna.class);
-					  if( columna!=null ) {
-						  UBean.ejecutarSet(myObj, fields.get(i).getName(), res.getObject(columna.nombre(), fields.get(i).getType()) );
-					  }		
-				 }
-				
-				retorno.add(myObj);
-				
+
+				ArrayList<Field> atributos = UBean.obtenerAtributos(miObjeto);
+
+				for (int i = 0; i < atributos.size(); i++)
+				{
+					  Columna miColumna = atributos.get(i).getAnnotation(Columna.class);
+
+					  if(miColumna!=null)
+					  {
+						  UBean.ejecutarSet(miObjeto, atributos.get(i).getName(), miResultSet.getObject(miColumna.nombre(), atributos.get(i).getType()));
+					  }
+				}
+
+				personas.add(miObjeto);
 			}
-			
-		} catch (SQLException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			// TODO Auto-generated catch block
+		} 
+		catch (SQLException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) 
+		{
 			e.printStackTrace();
 		}
-		return retorno;
+		
+		return personas;
 	}
 }

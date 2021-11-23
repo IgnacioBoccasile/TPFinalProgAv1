@@ -1,43 +1,55 @@
 package Utilidades;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
 import java.util.ArrayList;
-import Anotaciones.Id;
 
 public class UBean
 {
+
+/*
+
+El método 'obtenerAtributos' devuelve un ArrayList<Field> con todos los atributos que posee el parámetro Object:
+
+*/
+
 	public static ArrayList<Field> obtenerAtributos(Object o)
 	{
-		ArrayList<Field> retorno = new ArrayList<Field>();
+		ArrayList<Field> atributos = new ArrayList<Field>();
 
-		Class c = o.getClass();
+		Class miClase = o.getClass();
 
-		for(Field f: c.getDeclaredFields())
+		for(Field f : miClase.getDeclaredFields())
 		{
-			retorno.add(f);
+			atributos.add(f);
 		}
 
-		return retorno;
+		return atributos;
 	}
+
+/*
+
+El método 'ejecutarSet' ejecuta el Setter del String dentro del Object:
+
+*/
 
 	public static void ejecutarSet(Object o, String att, Object valor)
 	{
 		if(o != null && valor != null)
 		{
-			Class c = o.getClass();
+			Class miClase = o.getClass();
 
-			String atributo = att.substring(0, 1).toUpperCase() + att.substring(1);
+			String miAtributo = att.substring(0, 1).toUpperCase() + att.substring(1);
 
-			for(Method m : c.getDeclaredMethods())
+			for(Method miMethod : miClase.getDeclaredMethods())
 			{
-				if(m.getName().startsWith("set".concat(atributo)))
+				if(miMethod.getName().startsWith("set".concat(miAtributo)))
 				{
 					try
 					{
-						m.invoke(o, valor);
+						miMethod.invoke(o, valor);
 					}
 					catch (IllegalAccessException e)
 					{
@@ -56,23 +68,29 @@ public class UBean
 		}
 	}
 
+/*
+
+El método 'ejecutarGet' devuelve el valor del atributo pasado por parámetro, ejecutando el getter dentro del objeto:
+
+*/
+
 	public static Object ejecutarGet(Object o, String att)
 	{
 		Object retorno = null;
 
 		if(o != null)
 		{
-			Class c = o.getClass();
+			Class miClase = o.getClass();
 
-			String atributo = att.substring(0, 1).toUpperCase() + att.substring(1);
+			String miAtributo = att.substring(0, 1).toUpperCase() + att.substring(1);
 
-			for(Method m : c.getDeclaredMethods())
+			for(Method miMethod : miClase.getDeclaredMethods())
 			{
-				if(m.getName().startsWith("get".concat(atributo)))
+				if(miMethod.getName().startsWith("get".concat(miAtributo)))
 				{
 					try
 					{
-						retorno = m.invoke(o);
+						retorno = miMethod.invoke(o);
 					}
 					catch (IllegalAccessException e)
 					{

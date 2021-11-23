@@ -7,6 +7,8 @@ import java.lang.annotation.ElementType;
 
 @Retention(RetentionPolicy.RUNTIME)
 
+//Anotación declarada a nivel de clase, y permite ingresar la propiedad 'nombre':
+
 @Target(ElementType.TYPE)
 
 public @interface Tabla

@@ -14,7 +14,7 @@ public class Program
 
 		String apellido;
 
-		Persona p = new Persona();
+		Persona miPersona = new Persona();
 
 		System.out.println("\nBIENVENIDO!!!\n\n\nIngrese el número de operación:\n");
 
@@ -24,137 +24,125 @@ public class Program
 
 		System.out.println("3 - Modificar Persona");
 
-		System.out.println("4 - Consultar Datos Persona");
-		
-		System.out.println("5 - Probar Método 'guardarModificar'");
-		
-		System.out.println("6 - Obtener Todas las Personas\n");
+		System.out.println("4 - Consultar Persona");
 
-		Scanner sc = new Scanner(System.in);
+		System.out.println("5 - Probar 'guardarModificar'");
 
-        String numero = sc.nextLine();
+		System.out.println("6 - Mostrar Personas\n");
 
-        switch(numero)
+		Scanner miScanner = new Scanner(System.in);
+
+        String num = miScanner.nextLine();
+
+        switch(num)
 		{
 			case "1":
+				System.out.println("\nIngrese el ID:\n");
 
-				System.out.println("\nIngrese el Id:\n");
+				id = Integer.parseInt(miScanner.nextLine());
 
-				id = Integer.parseInt(sc.nextLine());
+				System.out.println("\nIngrese el Nombre:\n");
 
-				System.out.println("\nIngrese el nombre:\n");
+				nombre = miScanner.nextLine();
 
-				nombre = sc.nextLine();
+				System.out.println("\nIngrese el Apellido:\n");
 
-				System.out.println("\nIngrese el apellido:\n");
+				apellido = miScanner.nextLine();
 
-				apellido = sc.nextLine();
+				miPersona = new Persona(id, nombre, apellido);
 
-				p = new Persona(id, nombre, apellido);
+				Consultas.guardar(miPersona, id);
 
-				Consultas.guardar(p, id);
+				System.out.println(miPersona.toStringGuardar());
 
-				System.out.println(p.toStringGuardar());
-				
 				break;
+
 
 			case "2":
+				System.out.println("\nIngrese el ID de la Persona a dar de baja:\n");
 
-				System.out.println("\nIngrese el Id de la persona a dar de baja:\n");
+				id = Integer.parseInt(miScanner.nextLine());
 
-				id = Integer.parseInt(sc.nextLine());
-				
-				p.setId(id);
+				miPersona.setId(id);
 
-				Consultas.eliminar(p);
-				
+				Consultas.eliminar(miPersona);
+
 				break;
+
 
 			case "3":
+				System.out.println("\nIngrese el ID de la Persona a modificar:\n");
 
-				System.out.println("\nIngrese el Id de la persona a modificar:\n");
+				id = Integer.parseInt(miScanner.nextLine());
 
-				id = Integer.parseInt(sc.nextLine());
+				System.out.println("\nIngrese el nuevo Nombre:\n");
 
-				System.out.println("\nIngrese el nuevo nombre:\n");
+				nombre = miScanner.nextLine();
 
-				nombre = sc.nextLine();
+				System.out.println("\nIngrese el nuevo Apellido:\n");
 
-				System.out.println("\nIngrese el nuevo apellido:\n");
+				apellido = miScanner.nextLine();
 
-				apellido = sc.nextLine();
+				miPersona = new Persona(id, nombre, apellido);
 
-				p = new Persona(id, nombre, apellido);
-
-				Consultas.modificar(p);
+				Consultas.modificar(miPersona);
 
 				break;
+
 
 			case "4":
-				System.out.println("\nIngrese el Id de la persona que desea consultar:\n");
+				System.out.println("\nIngrese el ID de la Persona que desea consultar:\n");
 
-				id = Integer.parseInt(sc.nextLine());
+				id = Integer.parseInt(miScanner.nextLine());
 
-				Persona o = (Persona) Consultas.obtenerPorId(Persona.class, id);
+				Persona miObjeto = (Persona) Consultas.obtenerPorId(Persona.class, id);
 
-				
-				if(o.getId() == null)
+
+				if(miObjeto.getId() == null)
 				{
-					System.out.println("\nLo sentimos, no existe una persona con ese Id en la base de datos :(");
+					System.out.println("\nLo sentimos, no existe una Persona con ese ID en la base de datos :(");
 				}
-				
 				else
 				{
-					System.out.println(o.toStringConsultar());
+					System.out.println(miObjeto.toStringConsultar());
 				}
-				
+
 				break;
-				
+
+
 			case "5":
+				System.out.println("\nIngrese el ID de la Persona a modificar:\n");
 
-				System.out.println("\nIngrese el Id de la persona a modificar:\n");
+				id = Integer.parseInt(miScanner.nextLine());
 
-				id = Integer.parseInt(sc.nextLine());
+				System.out.println("\nIngrese el nuevo Nombre:\n");
 
-				System.out.println("\nIngrese el nuevo nombre:\n");
+				nombre = miScanner.nextLine();
 
-				nombre = sc.nextLine();
+				System.out.println("\nIngrese el nuevo Apellido:\n");
 
-				System.out.println("\nIngrese el nuevo apellido:\n");
+				apellido = miScanner.nextLine();
 
-				apellido = sc.nextLine();
+				miPersona = new Persona(id, nombre, apellido);
 
-				p = new Persona(id, nombre, apellido);
-
-				Consultas.guardarModificar(p, id);
+				Consultas.guardarModificar(miPersona, id);
 
 				break;
-				
+
+
 			case "6":
-				
-				ArrayList<Object> array = Consultas.obtenerTodos(Persona.class);
-				
+				ArrayList<Object> personas = Consultas.obtenerTodos(Persona.class);
+
 				System.out.println("\nEstas son todas las personas que se encuentran cargadas en la base de datos:\n");
-				
-				for(Object obj:array) 
+
+				for(Object o : personas)
 				{
-					p = (Persona) obj;
-					
-					System.out.println(p.toStringObtenerTodos());
+					miPersona = (Persona) o;
+
+					System.out.println(miPersona.toStringObtenerTodos());
 				}
 
-				/*ArrayList<Object> list = Consultas.obtenerTodos(Persona.class);
-				
-				System.out.println("\nEstas son todas las personas que se encuentran cargadas en la base de datos:\n");
-				
-				for(Object ob : list)
-				{
-					p = (Persona) ob;
-					
-					System.out.println(p.toStringObtenerTodos());
-				}
-
-				break;*/
+				break;
 		}
 	}
 }
