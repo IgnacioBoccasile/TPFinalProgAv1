@@ -3,11 +3,16 @@ package Servicios;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+
 import Anotaciones.Columna;
 import Anotaciones.Tabla;
 import Anotaciones.Id;
@@ -16,7 +21,7 @@ import Utilidades.UConexion;
 
 public class Consultas
 {
-	public static void guardar(Object o)
+	public static Object guardar(Object o, Object idConsultar)
 	{
 		String consulta = "INSERT INTO ";
 
@@ -98,6 +103,8 @@ public class Consultas
 		}
 
 		cone.desconectar();
+		
+		return obtenerPorId(c, idConsultar);
 	}
 
 	public static void modificar(Object o)
@@ -132,11 +139,7 @@ public class Consultas
 
 			if(id != null)
 			{
-				System.out.println(f.getName()+ " 1");
-
 				columnaId = columnaId + "id = " + UBean.ejecutarGet(o, f.getName());
-
-				System.out.println(columnaId);
 			}
 
 			Columna col = f.getAnnotation(Columna.class);
@@ -155,11 +158,16 @@ public class Consultas
 
 		try
 		{
-			System.out.println(consulta);
-
 			PreparedStatement st = con.prepareCall(consulta);
 
-			st.execute();
+			if(st.executeUpdate() != 0)
+			{
+				System.out.println("\nFELICITACIONES!!! La persona fue modificada exitosamente, ya puede verificarlo en la base de datos :)");
+			}
+			else
+			{
+				System.out.println("\nLo sentimos, no existe una persona con ese Id en la base de datos :(");
+			}
 		}
 		catch (SQLException e)
 		{
@@ -190,7 +198,7 @@ public class Consultas
 		cone.conectar();
 
 		Connection con = cone.getConexion();
-
+		
 		for(Field f: atributos)
 		{
 			Id id = f.getAnnotation(Id.class);
@@ -206,8 +214,15 @@ public class Consultas
 		try
 		{
 			PreparedStatement st = con.prepareCall(consulta);
-
-			st.execute();
+			
+			if(st.executeUpdate() != 0)
+			{
+				System.out.println("\nFELICITACIONES!!! La persona fue dada de baja exitosamente, ya puede verificarlo en la base de datos :)");
+			}
+			else
+			{
+				System.out.println("\nLo sentimos, no existe una persona con ese Id en la base de datos :(");
+			}
 		}
 		catch (SQLException e)
 		{
@@ -274,10 +289,6 @@ public class Consultas
 			{
 				for(Field f: atributos)
 				{
-					//System.out.println(f.getName());
-
-					//System.out.println(rs.getObject(f.getName()));
-
 					UBean.ejecutarSet(retorno, f.getName(), rs.getObject(f.getName()));
 				}
 			}
@@ -289,6 +300,124 @@ public class Consultas
 
 		cone.desconectar();
 
+		return retorno;
+	}
+	
+	public static void guardarModificar(Object o, Object idGuardarModificar)
+	{
+		String consulta = "UPDATE ";
+
+		int i  = 0;
+
+		Class c = o.getClass();
+
+		Tabla t = (Tabla) c.getAnnotation(Tabla.class);
+
+		String nombreTabla = t.nombre();
+
+		List<Field> atributos = UBean.obtenerAtributos(o);
+
+		String columnas = " ";
+
+		String columnaId = "WHERE ";
+
+		UConexion cone = UConexion.instancia();
+
+		cone.conectar();
+
+		Connection con = cone.getConexion();
+
+		consulta = consulta + nombreTabla + " SET";
+
+		for(Field f: atributos)
+		{
+			Id id = f.getAnnotation(Id.class);
+
+			if(id != null)
+			{
+				columnaId = columnaId + "id = " + UBean.ejecutarGet(o, f.getName());
+			}
+
+			Columna col = f.getAnnotation(Columna.class);
+
+			if(col != null)
+			{
+				columnas = columnas + col.nombre() + " = '" + UBean.ejecutarGet(o, f.getName()) + "' ,";
+
+				i++;
+			}
+		}
+
+		columnas = columnas.substring(0, columnas.length() - 1);
+
+		consulta = consulta + columnas + columnaId;
+
+		try
+		{
+			PreparedStatement st = con.prepareCall(consulta);
+
+			if(st.executeUpdate() != 0)
+			{
+				System.out.println("\nFELICITACIONES!!! La persona fue modificada exitosamente, ya puede verificarlo en la base de datos :)");
+			}
+			else
+			{
+				System.out.println("\nLa persona indicada no existía en la base de datos, así que la agregamos. Ya puede verificarlo :)");
+				guardar(o, idGuardarModificar);
+			}
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+
+		cone.desconectar();
+	}
+	
+	public static ArrayList<Object> obtenerTodos(Class c) {
+		String consulta = "SELECT * FROM ";
+		String nombreTabla = ((Tabla)c.getAnnotation(Tabla.class)).nombre();
+		
+		consulta = consulta + nombreTabla;
+		
+		ArrayList<Object> retorno = new ArrayList<Object>();		
+		
+		try {
+			UConexion cone = UConexion.instancia();
+
+			cone.conectar();
+
+			Connection con = cone.getConexion();
+			PreparedStatement ps = con.prepareStatement(consulta);
+		
+			ResultSet res = ps.executeQuery();
+			
+			while(res.next()) {
+				Object myObj = null;
+				for(Constructor cons:c.getConstructors()) {
+					if(cons.getParameterCount() == 0) {
+						myObj = cons.newInstance(null);
+						break;
+					}
+				}
+				
+				ArrayList<Field> fields = UBean.obtenerAtributos(myObj);
+				
+				for (int i = 0; i < fields.size(); i++) {
+					  Columna columna = fields.get(i).getAnnotation(Columna.class);
+					  if( columna!=null ) {
+						  UBean.ejecutarSet(myObj, fields.get(i).getName(), res.getObject(columna.nombre(), fields.get(i).getType()) );
+					  }		
+				 }
+				
+				retorno.add(myObj);
+				
+			}
+			
+		} catch (SQLException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return retorno;
 	}
 }

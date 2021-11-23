@@ -36,9 +36,9 @@ public class UConexion
 		{
 			ResourceBundle rs = ResourceBundle.getBundle("framework");
 
-			Class.forName(rs.getString("driver"));
+			Class.forName(rs.getString("Driver"));
 
-			this.conexion = DriverManager.getConnection(rs.getString("ruta"), rs.getString("usuario"),rs.getString("contraseña"));
+			this.conexion = DriverManager.getConnection(rs.getString("Ubicación"), rs.getString("Usuario"),rs.getString("Contraseña"));
 		}
 		catch(ClassNotFoundException e)
 		{

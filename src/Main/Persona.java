@@ -4,6 +4,7 @@ package Main;
 public class Persona
 {
 	@Anotaciones.Id
+	@Anotaciones.Columna(nombre = "ID")
 	private Integer id;
 
 	@Anotaciones.Columna(nombre = "NOMBRE")
@@ -83,10 +84,19 @@ public class Persona
 
 		return retorno;
 	}
-
-	@Override
-	public String toString()
+	
+	public String toStringGuardar()
 	{
-		return "La persona obtenida fue:\nId = " + this.id + ", " + "Nombre = " + this.nombre + ", " + "Apellido = " + this.apellido;
+		return "\nFELICITACIONES!!! " + this.nombre + " " + this.apellido + " fue cargado correctamente en la base datos :)";
+	}
+	
+	public String toStringConsultar()
+	{
+		return "\nLa persona con el Id N° " + this.id + " posee los siguientes datos:\n\nNombre = " + this.nombre + ", " + "Apellido = " + this.apellido;
+	}
+	
+	public String toStringObtenerTodos()
+	{
+		return "Id = " + this.id + ", Nombre = " + this.nombre + ", " + "Apellido = " + this.apellido;
 	}
 }
